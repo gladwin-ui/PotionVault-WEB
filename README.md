@@ -145,30 +145,43 @@ Diagram berikut menggunakan **Mermaid** dan dapat ditampilkan oleh renderer Mark
 ```mermaid
 flowchart TD
     A([Mulai]) --> B[Customer login]
-    B --> C[Jelajahi katalog dan pilih maksimal 2 unit]
-    C --> D[Hitung biaya sewa dan kirim pengajuan]
-    D --> E{Unit tersedia dan kuota valid?}
-    E -- Tidak --> F[Tampilkan alasan penolakan]
-    E -- Ya --> G[Simpan PENDING dan reservasi unit]
-    G --> H{Keputusan Admin}
-    H -- Tolak --> I[REJECTED; lepaskan reservasi]
-    H -- Setujui --> J[APPROVED; batas ambil 24 jam]
-    J --> K{Masih sebelum kedaluwarsa?}
-    K -- Tidak --> L[EXPIRED; lepaskan reservasi]
-    K -- Ya --> M[Pelanggan membayar di luar sistem]
-    M --> N{Admin konfirmasi pembayaran LUNAS?}
-    N -- Belum --> O[Tunggu pembayaran atau batas 24 jam]
-    O --> K
-    N -- Ya --> P{Masih dalam 24 jam?}
-    P -- Tidak --> Q[Tangani pembayaran dan pengajuan kedaluwarsa]
-    P -- Ya --> R[Admin menyerahkan artefak]
-    R --> S[Catat mulai sewa dan jatuh tempo 5 hari]
-    S --> T[Status BORROWED]
-    T --> U[Lanjut ke proses pengembalian]
-    F --> V([Selesai])
-    I --> V
-    L --> V
-    Q --> V
+    B --> C[Pilih artefak]
+    C --> D[Maksimal 2 unit]
+    D --> E[Ajukan sewa]
+    E --> F{Validasi<br/>berhasil?}
+
+    F -- Tidak --> G[Tampilkan alasan]
+    F -- Ya --> H[Simpan<br/>PENDING]
+
+    H --> I{Keputusan<br/>Admin}
+    I -- Tolak --> J[REJECTED<br/>Lepas reservasi]
+    I -- Setujui --> K[APPROVED<br/>Batas ambil 24 jam]
+
+    K --> L{Masih sebelum<br/>kedaluwarsa?}
+    L -- Tidak --> M[EXPIRED<br/>Lepas reservasi]
+    L -- Ya --> N[Customer bayar<br/>biaya sewa]
+
+    N --> O{Pembayaran<br/>LUNAS?}
+    O -- Belum --> P[Menunggu pembayaran]
+    P --> L
+    O -- Ya --> Q[Admin serahkan<br/>barang]
+
+    Q --> R[BORROWED]
+    R --> S[Customer gunakan<br/>artefak]
+    S --> T[Admin proses<br/>pengembalian]
+
+    T --> U{Terlambat?}
+    U -- Tidak --> V[Tanpa denda]
+    U -- Ya --> W[Hitung denda]
+
+    W --> X[Catat status<br/>pembayaran denda]
+    V --> Y[Simpan transaksi<br/>pengembalian]
+    X --> Y
+    Y --> Z([Selesai])
+
+    G --> Z
+    J --> Z
+    M --> Z
 ```
 
 > Pembayaran dan serah terima sebaiknya dilakukan dalam satu proses checkout admin. Jika pembayaran telah dicatat tetapi serah terima tidak jadi dilakukan, admin harus menangani koreksi/pengembalian dana secara eksplisit; rincian alur pengecualian akan difinalisasi pada PRD.
@@ -176,29 +189,43 @@ flowchart TD
 ### Alur Pengembalian dan Denda
 
 ```mermaid
+
 flowchart TD
-    A([Artefak sedang disewa]) --> B[Customer menyerahkan unit kepada Admin]
-    B --> C[Admin cek kode dan kondisi unit]
-    C --> D{Unit masih tercatat dipinjam?}
-    D -- Tidak --> E[Tolak proses dan tampilkan kesalahan]
-    D -- Ya --> F[Catat waktu pengembalian]
-    F --> G{Melewati jatuh tempo 5 hari?}
-    G -- Tidak --> H[Denda Rp0]
-    G -- Ya --> I[Hitung denda Rp2.000 per hari per unit]
-    I --> J[Status denda BELUM DIBAYAR]
-    H --> K[Simpan item sebagai RETURNED]
-    J --> K
-    K --> L{Kondisi artefak baik?}
-    L -- Ya --> M[Unit AVAILABLE]
-    L -- Tidak --> N[Unit DAMAGED atau MAINTENANCE]
-    M --> O{Semua unit transaksi telah kembali?}
-    N --> O
-    O -- Tidak --> P[Transaksi masih memiliki item aktif]
-    O -- Ya --> Q[Transaksi selesai]
-    P --> R[Update riwayat]
+    A([Mulai]) --> B[Customer kembalikan<br/>artefak]
+    B --> C[Admin cari<br/>transaksi sewa]
+    C --> D{Unit masih<br/>dipinjam?}
+
+    D -- Tidak --> E[Tampilkan<br/>pesan error]
+    D -- Ya --> F[Admin periksa<br/>kondisi artefak]
+
+    F --> G[Catat tanggal<br/>pengembalian]
+    G --> H{Melewati<br/>jatuh tempo?}
+
+    H -- Tidak --> I[Denda Rp0]
+    H -- Ya --> J[Hitung hari<br/>keterlambatan]
+
+    J --> K[Denda Rp2.000<br/>per hari]
+    K --> L[Status denda<br/>BELUM DIBAYAR]
+
+    I --> M[Admin konfirmasi<br/>pengembalian]
+    L --> M
+
+    M --> N[Status unit<br/>RETURNED]
+    N --> O{Kondisi<br/>artefak baik?}
+
+    O -- Ya --> P[Unit AVAILABLE]
+    O -- Tidak --> Q[Unit MAINTENANCE<br/>atau DAMAGED]
+
+    P --> R{Semua unit<br/>dikembalikan?}
     Q --> R
-    R --> S([Selesai])
-    E --> S
+
+    R -- Tidak --> S[Transaksi masih<br/>memiliki unit aktif]
+    R -- Ya --> T[Transaksi selesai]
+
+    S --> U([Selesai])
+    T --> U
+    E --> U
+
 ```
 
 Admin dapat mengubah status denda menjadi **LUNAS** setelah pembayaran di luar sistem terkonfirmasi. Informasi pengembalian dan pembayaran dicatat untuk kebutuhan riwayat serta laporan.
