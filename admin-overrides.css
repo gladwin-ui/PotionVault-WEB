@@ -1,0 +1,9 @@
+.dashboard-shell > .topbar { grid-column: 1 / -1; grid-row: 1; }
+.dashboard-shell > .sidebar { grid-column: 1; grid-row: 2; }
+.dashboard-shell > .dashboard-main { grid-column: 2; grid-row: 2; }
+@media (max-width: 760px) {
+  .dashboard-shell { display: block; }
+  .dashboard-shell > .topbar,
+  .dashboard-shell > .sidebar,
+  .dashboard-shell > .dashboard-main { grid-column: auto; grid-row: auto; }
+}

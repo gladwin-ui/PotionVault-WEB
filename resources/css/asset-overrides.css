@@ -1,0 +1,100 @@
+/* Keep the approved local reference artwork available after Vite compilation. */
+.hero { background-image: linear-gradient(90deg,#0c0b1a 7%,#1a102a9c 47%,#0b0a14cc), url('/docs/reference-customer-home.png.png'); }
+.admin-hero { background-image: linear-gradient(90deg,#0c0a18e8,#3e1c5ba8), url('/docs/reference-admin-dashboard.png'); }
+
+/* Admin shell: header spans the full workspace; sidebar and content occupy separate columns. */
+.dashboard-shell {
+    display: grid;
+    grid-template-columns: 230px minmax(0, 1fr);
+    grid-template-rows: 74px minmax(0, 1fr);
+    min-height: 100vh;
+}
+.dashboard-shell > .topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-width: 0;
+    width: 100%;
+}
+.dashboard-shell > .sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+}
+.dashboard-shell > .dashboard-main {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    width: 100%;
+    overflow-x: hidden;
+}
+.dashboard-main .page-head h1 { max-width: 100%; }
+.dashboard-main .panel { min-width: 0; }
+.dashboard-main .data-table { min-width: 760px; }
+
+@media (max-width: 760px) {
+    .dashboard-shell {
+        display: block;
+        min-height: 100vh;
+    }
+    .dashboard-shell > .topbar {
+        display: flex;
+    }
+    .dashboard-shell > .sidebar,
+    .dashboard-shell > .dashboard-main {
+        display: block;
+    }
+}
+
+/* Keep rental workflow statuses and actions readable at desktop widths. */
+.request-table { min-width: 940px !important; table-layout: fixed; }
+.request-table .request-ref { width: 10%; }
+.request-table .request-customer { width: 18%; }
+.request-table .request-artifacts { width: 21%; }
+.request-table .request-total { width: 13%; }
+.request-table .request-status { width: 14%; }
+.request-table .request-action { width: 24%; }
+.request-table td { vertical-align: middle; }
+.artifact-cell { white-space: normal; }
+.artifact-cell span { display: block; line-height: 1.45; }
+.amount-cell { white-space: nowrap; color: var(--gold2) !important; font-weight: 700; }
+.status-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+.status-stack .badge { display: inline-flex; }
+.payment-label { color: var(--muted); font-size: 11px; letter-spacing: .3px; }
+.request-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.request-actions form { margin: 0; }
+.reject-form { display: flex; align-items: center; gap: 7px; flex: 1 1 190px; min-width: 180px; }
+.reject-form .field { min-width: 0; flex: 1 1 auto; padding: 9px 10px; }
+.request-actions .btn { white-space: nowrap; }
+@media (max-width: 1050px) {
+    .request-table { min-width: 880px !important; }
+}
+
+/* Artifact cards: keep title, rarity, price, availability, and actions in separate layers. */
+.artifact-grid { align-items: stretch; }
+.artifact-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.artifact-card .artifact-art { flex: 0 0 155px; }
+.artifact-card .card-body { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: 16px; }
+.artifact-card .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-height: 48px; }
+.artifact-card .card-top h3 { flex: 1 1 auto; min-width: 0; margin: 0; line-height: 1.3; overflow-wrap: anywhere; }
+.artifact-card .card-top .badge { flex: 0 0 auto; align-self: flex-start; margin-top: 0; }
+.artifact-card .unit-code { min-height: 18px; margin-top: 5px; }
+.artifact-card .price { min-height: 25px; margin-top: 12px; }
+.artifact-card .status { min-height: 18px; }
+.artifact-card .card-actions { margin-top: auto; padding-top: 16px; }
+.artifact-card .card-actions .btn { min-width: 0; white-space: nowrap; }
+.catalog-filters { display: grid; grid-template-columns: minmax(220px, 1.7fr) minmax(150px, 1fr) minmax(150px, 1fr) auto; align-items: center; }
+.catalog-filters .search { min-width: 0; }
+.pagination-wrap { margin-top: 24px; }
+.rental-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.inline-confirm { position: relative; display: inline-block; }
+.inline-confirm summary { list-style: none; cursor: pointer; }
+.inline-confirm summary::-webkit-details-marker { display: none; }
+.inline-confirm-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 9px; padding: 10px; min-width: 245px; border: 1px solid var(--line); border-radius: 9px; background: #17112a; box-shadow: var(--shadow); }
+.inline-confirm-box span { flex: 1 0 100%; color: var(--lav); font-size: 12px; }
+.inline-confirm-box form { margin: 0; }
+@media (max-width: 760px) {
+    .catalog-filters { grid-template-columns: 1fr; }
+    .catalog-filters .btn { width: 100%; }
+    .artifact-card .card-actions { flex-wrap: wrap; }
+    .artifact-card .card-actions .btn { flex: 1 1 120px; }
+}

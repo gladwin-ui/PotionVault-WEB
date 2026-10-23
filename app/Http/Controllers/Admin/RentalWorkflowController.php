@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Rental;
+use App\Models\RentalItem;
+use App\Services\RentalWorkflowService;
+use Illuminate\Http\Request;
+
+class RentalWorkflowController extends Controller
+{
+    public function requests() { return view('admin.requests', ['rentals' => Rental::with('user', 'items.unit', 'payment')->latest()->get()]); }
+    public function approve(Rental $rental, RentalWorkflowService $workflow) { $workflow->approve($rental, auth()->id()); return back()->with('status', 'Rental berhasil disetujui.'); }
+    public function reject(Request $request, Rental $rental, RentalWorkflowService $workflow) { $workflow->reject($rental, auth()->id(), $request->input('reason')); return back()->with('status', 'Rental berhasil ditolak.'); }
+    public function payment(Rental $rental, RentalWorkflowService $workflow) { $workflow->confirmPayment($rental, auth()->id()); return back()->with('status', 'Pembayaran berhasil dikonfirmasi.'); }
+    public function handover(Rental $rental, RentalWorkflowService $workflow) { $workflow->handover($rental); return back()->with('status', 'Serah terima berhasil dikonfirmasi.'); }
+    public function returnItem(Request $request, RentalItem $item, RentalWorkflowService $workflow) { $data = $request->validate(['condition' => ['required', 'in:GOOD,MAINTENANCE,DAMAGED'], 'return_notes' => ['nullable', 'string']]); $returned = $workflow->returnItem($item, $data['condition']); if (!empty($data['return_notes'])) $returned->update(['return_notes' => $data['return_notes']]); return back()->with('status', 'Pengembalian berhasil dikonfirmasi.'); }
+    public function payFine(RentalItem $item, RentalWorkflowService $workflow) { $workflow->payFine($item, auth()->id()); return back()->with('status', 'Pelunasan denda berhasil dikonfirmasi.'); }
+    public function report(Request $request) { $rentals = Rental::with('user', 'items.unit', 'payment')->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))->when($request->filled('customer_id'), fn ($q) => $q->where('user_id', $request->integer('customer_id')))->when($request->filled('payment_status'), fn ($q) => $q->whereHas('payment', fn ($payment) => $payment->where('status', $request->string('payment_status'))))->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date('date_from')))->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date('date_to')))->latest()->get(); return view('admin.report', compact('rentals')); }
+}

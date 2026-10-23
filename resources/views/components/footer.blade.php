@@ -1,0 +1,1 @@
+<footer class="footer"><div><div class="brand"><span class="brand-mark">⚗</span>PotionVault</div><small>MAGIC FOR A BRIGHTER TOMORROW</small></div><div class="footer-links"><a href="{{ route('home') }}">Home</a><a href="{{ route('catalog') }}">Catalog</a><a href="{{ route('billing') }}">Billing</a></div><div>✦ ✧ ◇ &nbsp; © {{ date('Y') }} PotionVault</div></footer>

@@ -1,0 +1,2 @@
+@extends('layouts.customer')
+@section('content')<main class="page"><div class="page-head"><div><div class="eyebrow">PotionVault workspace</div><h1>{{ $heading }}</h1><p>{{ $description }}</p></div></div><section class="panel ornament"><div class="notice">Data is shown from the authenticated account when the corresponding module is connected.</div><div class="empty">{{ $empty ?? 'No records to display yet.' }}</div></section></main>@endsection
