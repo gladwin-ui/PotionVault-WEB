@@ -83,6 +83,10 @@ Payment gateway, aplikasi mobile native, pengiriman barang, dan efek sihir nyata
 - Dua customer tidak dapat memesan unit yang sama secara valid bersamaan.
 - Automated test dan browser test yang tercatat pada README tetap PASS.
 
-## 8. Bukti penyerahan yang masih harus dilengkapi
+## 8. Status dokumentasi dan deliverable
 
-Nama kelompok/anggota, screenshot schema database, video demo, UAT formal, manual book, dan URL GitLab belum tersedia di workspace sehingga statusnya tetap `BELUM ADA BUKTI`.
+- Identitas kelompok tersedia di README: **SahabatClaude — Darvesh Gladwin Musyaffa**.
+- Repository GitHub tersedia: [PotionVault-WEB](https://github.com/gladwin-ui/PotionVault-WEB).
+- UAT formal dan evidence tersedia di [PotionVault_UAT_Final.md](PotionVault_UAT_Final.md); automated UAT 81/81 PASS dan manual testing telah dilakukan. Human acceptance/sign-off formal masih pending.
+- Manual Book Admin/Customer, video demo, dan screenshot schema MySQL belum tersedia sebagai bukti di workspace.
+- URL repository GitLab belum tersedia; repository yang tersedia adalah GitHub.

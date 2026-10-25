@@ -112,9 +112,9 @@ Nonfungsional:
 
 ## 9. Status verifikasi
 
-Pemeriksaan terbaru mencatat 24 Laravel test dengan 120 assertion PASS dan 15 Playwright test PASS pada MySQL testing terisolasi. `route:list` menampilkan 54 route, Blade view cache PASS, dan Vite build PASS dengan warning nonfatal optional `fontaine` serta referensi gambar dokumentasi.
+Pemeriksaan terbaru mencatat 40 Laravel test dengan 200 assertion PASS dan 20 Playwright test PASS pada environment testing terisolasi. `route:list` menampilkan 54 route, Blade view cache PASS, dan Vite build PASS dengan warning nonfatal optional `fontaine` serta referensi gambar dokumentasi. UAT otomatis mencatat 81/81 skenario PASS; manual testing telah dilakukan, sedangkan human acceptance/sign-off formal masih pending.
 
-UAT formal, manual book, video demo, screenshot schema database, dan URL repository GitLab belum tersedia sebagai bukti di workspace.
+UAT formal tersedia pada [PotionVault_UAT_Final.md](PotionVault_UAT_Final.md). Manual Book, video demo, dan screenshot schema MySQL belum tersedia sebagai bukti di workspace. Repository GitHub tersedia pada [PotionVault-WEB](https://github.com/gladwin-ui/PotionVault-WEB); URL repository GitLab belum tersedia.
 
 ## 10. Referensi
 

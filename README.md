@@ -23,7 +23,7 @@ PotionVault adalah aplikasi Laravel untuk mengelola penyewaan unit fisik artefak
 | Nama kelompok | **SahabatClaude** |
 | Anggota | **Darvesh Gladwin Musyaffa** |
 | Platform | Web |
-| Status | Automated UAT dan manual testing selesai |
+| Status | Automated UAT dan manual testing selesai; human acceptance/sign-off formal masih pending |
 | Repository | [github.com/gladwin-ui/PotionVault-WEB](https://github.com/gladwin-ui/PotionVault-WEB) |
 | Demo video | Belum tersedia |
 
@@ -355,7 +355,35 @@ Buka `http://127.0.0.1:8000`.
 
 ## Testing dan quality checks
 
-Gunakan database testing terisolasi; jangan menjalankan `migrate:fresh` pada database development.
+### Laravel Feature Test
+
+`php artisan test` menggunakan environment testing terisolasi sesuai `phpunit.xml` dan tidak boleh diarahkan ke database development.
+
+### Playwright Chromium UAT
+
+Playwright memakai Chromium lokal, `workers: 1`, dan base URL default `http://127.0.0.1:8001` dari `playwright.config.js`. Jalankan server dengan database serta storage UAT terpisah:
+
+```powershell
+# Jalankan dari root repository; gunakan database UAT, bukan potionvault development.
+$env:DB_DATABASE = 'potionvault_uat_test'
+$env:LARAVEL_STORAGE_PATH = (Join-Path (Get-Location) 'uat-runtime-storage')
+New-Item -ItemType Directory -Force $env:LARAVEL_STORAGE_PATH | Out-Null
+
+php artisan config:clear
+php artisan migrate:fresh --seed --force
+php artisan serve --host=127.0.0.1 --port=8001
+```
+
+Pada terminal kedua, jalankan test browser:
+
+```powershell
+$env:BROWSER_BASE_URL = 'http://127.0.0.1:8001'
+npx playwright test
+```
+
+Setelah selesai, hentikan server dan hapus hanya folder runtime UAT yang dibuat untuk pengujian. Jangan menjalankan `migrate:fresh` pada database development dan jangan menghapus `storage/app/public` yang berisi gambar aplikasi.
+
+### Regression commands
 
 ```powershell
 php artisan test
@@ -380,7 +408,7 @@ Formal UAT Sprint 3.1:
 - Database concurrency MySQL terisolasi: PASS.
 - Evidence screenshot tersedia di [docs/uat/evidence](docs/uat/evidence).
 - Manual testing telah dilakukan oleh tim proyek.
-- Status: `UAT COMPLETED`; hasil formal dan evidence tersedia pada [PotionVault_UAT_Final.md](docs/PotionVault_UAT_Final.md).
+- Status automated UAT: `81/81 PASS`; human acceptance/sign-off formal masih pending. Detail tersedia pada [PotionVault_UAT_Final.md](docs/PotionVault_UAT_Final.md).
 
 ## Struktur penting
 

@@ -1,6 +1,6 @@
 # PotionVault — Full Deliverable Report
 
-**Tanggal verifikasi:** 25 Oktober 2026
+**Tanggal verifikasi:** 26 Oktober 2026
 **Basis:** source Laravel, migration, seeder, tests, Playwright, dan Bahan Soal asli.
 
 ## 1. Ringkasan deliverable
@@ -14,13 +14,14 @@ Dokumen teknis final:
 - [BRD Final](PotionVault_BRD_Final.md)
 - [ERD Final](PotionVault_ERD_Final.md)
 - [Flowcharts Final](PotionVault_Flowcharts_Final.md)
+- [Formal UAT Final](PotionVault_UAT_Final.md)
 - [Gap Analysis](PotionVault_Deliverable_Gap_Analysis.md)
 
 ## 2. Kesesuaian requirement Bahan Soal
 
 | Requirement asli | Implementasi/bukti | Status |
 |---|---|---|
-| README dengan identitas project dan fitur | `README.md` telah disinkronkan; nama kelompok/anggota masih placeholder | PARTIAL |
+| README dengan identitas project dan fitur | `README.md` telah disinkronkan dengan identitas SahabatClaude dan Darvesh Gladwin Musyaffa | PASS |
 | Dua role Admin dan User | `users.role`, middleware Admin, browser/feature tests | PASS |
 | Login dan Customer terdaftar | Auth controller dan route guest/auth | PASS |
 | Satu profile per user | `profiles.user_id` unique, create/update profile | PASS |
@@ -37,7 +38,8 @@ Dokumen teknis final:
 | Admin melihat/cetak histori | Report filter dan print handler | PASS |
 | Validasi field | Server-side validation controller | PASS |
 | Migration dan seeder | Migration aktual dan `DatabaseSeeder` | PASS |
-| Screenshot schema, video, UAT, manual book, GitLab | Tidak tersedia di workspace | BLOCKED / BELUM ADA BUKTI |
+| UAT formal dan evidence | `docs/PotionVault_UAT_Final.md` dan `docs/uat/evidence/`; 81/81 automated PASS, manual testing dilakukan, sign-off formal pending | PARTIAL |
+| Screenshot schema, video, Manual Book, GitLab | Belum tersedia atau GitLab tidak tersedia; GitHub tersedia pada repository resmi | BLOCKED / BELUM ADA BUKTI |
 
 ## 3. Workflow kritis
 
@@ -53,27 +55,25 @@ Perubahan expiry disimpan sebelum exception handover dikembalikan. Histori payme
 ## 4. Hasil verifikasi teknis
 
 ```text
-php artisan test       PASS — 24 tests, 120 assertions
-npx playwright test    PASS — 15 tests
+php artisan test       PASS — 40 tests, 200 assertions
+npx playwright test    PASS — 20 tests
 php artisan route:list PASS — 54 routes
 php artisan view:cache PASS
 npm.cmd run build      PASS
 ```
 
-Playwright dijalankan pada Chromium lokal dengan database MySQL testing terisolasi `potionvault_browser_test`. Tidak ada database development yang di-reset.
+Playwright dijalankan pada Chromium lokal dengan database MySQL testing terisolasi `potionvault_uat_test` dan storage runtime terpisah. Tidak ada database development yang di-reset.
 
 Concurrency workflow menggunakan row locking Customer/unit dan telah dicakup oleh test/driver MySQL terisolasi untuk mencegah double booking dan pelanggaran kuota dua unit.
 
-## 5. Artefak yang belum dapat dinyatakan selesai
+## 5. Status deliverable yang masih terbuka
 
-- Nama kelompok dan daftar anggota belum diisi.
 - Screenshot schema database aktual belum ada.
 - Video demonstrasi belum ada.
-- UAT formal dengan expected/actual/tester/tanggal/screenshot belum ada.
 - Manual Book Admin/Customer belum ada.
-- URL repository GitLab belum tersedia.
+- URL repository GitLab belum tersedia; repository GitHub tersedia.
 - Build memiliki warning nonfatal: optional `fontaine` dan referensi gambar dokumentasi yang tidak di-resolve saat build.
 
 ## 6. Kesimpulan
 
-Implementasi aplikasi dan automated verification memenuhi requirement fungsional utama. Dokumentasi teknis kini mengikuti source aktual. Deliverable penyerahan tugas belum dapat dinyatakan lengkap sebelum bukti UAT, manual book, screenshot schema, video, identitas tim, dan URL repository dilengkapi.
+Implementasi aplikasi, dokumentasi teknis, UAT formal, dan evidence automated telah tersedia. Human acceptance/sign-off masih pending. Screenshot schema, video demo, Manual Book, dan URL GitLab tetap menjadi temuan terbuka karena belum tersedia sebagai bukti aktual.

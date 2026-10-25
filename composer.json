@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "potionvault/potionvault-web",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "PotionVault web application for magical potion and artifact rental management.",
+    "keywords": ["potionvault", "artifact-rental", "laravel", "mysql"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
