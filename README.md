@@ -23,7 +23,7 @@ PotionVault adalah aplikasi Laravel untuk mengelola penyewaan unit fisik artefak
 | Nama kelompok | **SahabatClaude** |
 | Anggota | **Darvesh Gladwin Musyaffa** |
 | Platform | Web |
-| Status | Automated UAT dan manual testing selesai; human acceptance/sign-off formal masih pending |
+| Status | Automated UAT dan manual testing selesai |
 | Repository | [github.com/gladwin-ui/PotionVault-WEB](https://github.com/gladwin-ui/PotionVault-WEB) |
 | Demo video | Belum tersedia |
 
