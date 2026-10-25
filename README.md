@@ -1,4 +1,17 @@
-# PotionVault — Sistem Penyewaan Ramuan dan Artefak Sihir
+# 🧪 PotionVault — Magical Potion & Artifact Rental System
+
+<p align="center"><strong>Sistem Penyewaan Ramuan dan Artefak Sihir Berbasis Web</strong></p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/PotionVault-Magical%20Rental-6D28D9?style=for-the-badge" alt="PotionVault" />
+  <img src="https://img.shields.io/badge/Laravel-13-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 13" />
+  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP 8.3+" />
+  <img src="https://img.shields.io/badge/MySQL-8%2B-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL 8+" />
+  <img src="https://img.shields.io/badge/Blade%20%2B%20Vite-Frontend-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Blade and Vite" />
+  <img src="https://img.shields.io/badge/Playwright-Chromium-2EAD33?style=for-the-badge&logo=playwright&logoColor=white" alt="Playwright" />
+</p>
+
+> Katalog, reservasi, approval, pembayaran manual, handover, return, denda, refund, dashboard, dan laporan dalam satu aplikasi PotionVault.
 
 PotionVault adalah aplikasi Laravel untuk mengelola penyewaan unit fisik artefak/ramuan magis. Aplikasi ini mendukung katalog publik, akun Customer, operasi Admin, reservasi, approval, pembayaran manual, handover, pengembalian per unit, denda, refund, dashboard, dan laporan.
 
@@ -7,10 +20,10 @@ PotionVault adalah aplikasi Laravel untuk mengelola penyewaan unit fisik artefak
 | Item | Detail |
 |---|---|
 | Nama proyek | PotionVault |
-| Nama kelompok | `[SahabatClaude]` |
-| Nama team/anggota | `[Darvesh Gladwin Musyaffa]` |
+| Nama kelompok | **SahabatClaude** |
+| Anggota | **Darvesh Gladwin Musyaffa** |
 | Platform | Web |
-| Status | Automated UAT selesai; human acceptance/sign-off masih menunggu |
+| Status | Automated UAT dan manual testing selesai |
 | Repository | URL repository tidak tersedia di workspace ini; jangan menganggap URL GitHub/GitLab tanpa verifikasi |
 | Demo video | Belum tersedia |
 
@@ -79,6 +92,216 @@ Status utama:
 | Payment sewa | `UNPAID`, `PAID`, `REFUND_PENDING`, `REFUNDED` |
 | Unit | `AVAILABLE`, `RESERVED`, `BORROWED`, `MAINTENANCE`, `DAMAGED`, `DEACTIVATED` |
 | Fine per item | `NO_FINE`, `UNPAID`, `PAID` |
+
+## Ringkasan BRD
+
+PotionVault menggantikan pencatatan manual penyewaan artefak dengan sistem terpusat untuk katalog, reservasi, approval, pembayaran manual, handover, return, fine, refund, dan laporan.
+
+Ruang lingkup utama:
+
+- Admin mengelola unit artefak, kategori, Customer, approval, payment, handover, return, denda, refund, dashboard, dan report.
+- Customer terdaftar dapat mengelola profil, mencari katalog, melihat detail artefak, membuat rental maksimal dua unit, membatalkan rental `PENDING`, dan melihat transaksi miliknya.
+- Setiap unit memiliki `unit_code` unik, dapat memiliki banyak kategori, dan menyimpan kondisi, rarity, harga, status, serta foto.
+- Unit menggunakan soft delete tanpa fitur restore Admin; Customer menggunakan soft delete dan dapat di-restore; kategori hanya dapat dihapus jika belum digunakan. Histori transaksi tetap dipertahankan.
+- Sistem tidak mencakup payment gateway, aplikasi mobile native, pengiriman fisik, atau efek sihir nyata.
+
+Aturan bisnis inti: rental aktif Customer maksimal dua item; request mengunci Customer dan unit dalam transaksi; approval berlaku 24 jam; handover membutuhkan payment `PAID`; masa sewa lima hari; fine Rp2.000 per periode keterlambatan 24 jam per unit; return dapat parsial; dan rental menjadi `RETURNED` setelah semua item kembali.
+
+## Ringkasan PRD
+
+| Area | Ringkasan implementasi |
+|---|---|
+| Authentication | Registration Customer, login/logout, role guard Admin/Customer, akun aktif, dan profile tunggal. |
+| Customer | Katalog, pencarian nama/kode, filter kategori/rarity, detail artefak, rental 1–2 unit, dashboard, billing, histori, dan ownership isolation. |
+| Admin | CRUD artefak/kategori/Customer, foto artefak, kategori jamak, dashboard KPI/chart, approval/rejection, payment, handover, return, fine, refund, dan report print. |
+| Workflow | `PENDING` → `APPROVED`/`REJECTED` → `BORROWED` → `RETURNED`, termasuk cancel, expiry, partial return, fine, dan refund. |
+| Nonfungsional | Server-side validation, password hashing, authorization, foreign key/unique constraint, transaction/row locking, migration/seeder, dan responsive Blade UI. |
+
+Acceptance criteria utama telah diverifikasi melalui Laravel Feature Test, Playwright Chromium, MySQL concurrency test, dan UAT formal.
+
+## Flowchart lengkap
+
+### Registration dan login
+
+```mermaid
+flowchart TD
+    A([Mulai]) --> B{Sudah punya akun?}
+    B -- Tidak --> C[Registrasi Customer]
+    C --> D[Buat users + satu profiles]
+    B -- Ya --> E[Login]
+    D --> E
+    E --> F{Kredensial dan akun valid?}
+    F -- Tidak --> G[Tampilkan error]
+    F -- Ya --> H{Role}
+    H -- Admin --> I[Admin dashboard]
+    H -- User --> J[Customer dashboard]
+```
+
+### Rental request sampai approval
+
+```mermaid
+flowchart TD
+    A[Customer lihat katalog] --> B[Pilih 1-2 unit AVAILABLE]
+    B --> C{Kuota Customer <= 2?}
+    C -- Tidak --> D[Tolak request]
+    C -- Ya --> E[Lock Customer dan unit]
+    E --> F{Semua unit masih AVAILABLE?}
+    F -- Tidak --> D
+    F -- Ya --> G[Buat rental PENDING + snapshot harga + payment UNPAID]
+    G --> H[Unit menjadi RESERVED]
+    H --> I{Customer membatalkan?}
+    I -- Ya --> J[CANCELLED + unit AVAILABLE]
+    I -- Tidak --> K{Admin approve/reject}
+    K -- Reject --> L[REJECTED + unit AVAILABLE]
+    K -- Approve --> M[APPROVED + expiry 24 jam]
+```
+
+### Expiry, payment, handover, dan refund
+
+```mermaid
+flowchart TD
+    A[APPROVED] --> B{Batas pickup 24 jam lewat?}
+    B -- Tidak --> C{Admin konfirmasi payment?}
+    C -- Tidak --> A
+    C -- Ya --> D[Payment PAID]
+    D --> E{Handover sebelum expiry?}
+    E -- Ya --> F[Unit BORROWED + rental BORROWED]
+    E -- Tidak --> G[Rental EXPIRED]
+    B -- Ya, scheduler atau operasi Admin --> G
+    G --> H[Reserved unit menjadi AVAILABLE]
+    H --> I{Payment PAID?}
+    I -- Tidak --> J[Payment tetap UNPAID]
+    I -- Ya --> K[Payment REFUND_PENDING]
+    K --> L[Admin mencatat refund]
+    L --> M[Payment REFUNDED + audit refund]
+```
+
+### Handover, return, fine, dan completion
+
+```mermaid
+flowchart TD
+    A[Rental APPROVED + Payment PAID] --> B[Admin handover]
+    B --> C[Rental BORROWED; unit BORROWED]
+    C --> D[Due date = handover + 5 hari]
+    D --> E[Admin memilih item yang dikembalikan]
+    E --> F[Catat returned_at dan return_condition]
+    F --> G{Kondisi pengembalian}
+    G -- GOOD --> H[Unit AVAILABLE]
+    G -- MAINTENANCE --> I[Unit MAINTENANCE]
+    G -- DAMAGED --> J[Unit DAMAGED]
+    H --> K{Semua item returned?}
+    I --> K
+    J --> K
+    K -- Tidak --> L[Rental tetap BORROWED; partial return]
+    K -- Ya --> M[Rental RETURNED]
+    F --> N{Melewati due_at?}
+    N -- Tidak --> O[fine NO_FINE]
+    N -- Ya --> P[Hitung fine Rp2.000 per periode 24 jam per unit]
+    P --> Q[fine UNPAID]
+    Q --> R{Admin menjalankan payFine()?}
+    R -- Ya --> S[fine PAID + aktor/waktu]
+    R -- Tidak --> T[fine tetap UNPAID]
+```
+
+## ERD dan penjelasan schema
+
+ERD berikut memodelkan business schema utama PotionVault. Tabel framework Laravel seperti `sessions`, `cache`, `jobs`, dan `password_reset_tokens` tidak ditampilkan dalam ERD bisnis.
+
+```mermaid
+erDiagram
+    users ||--|| profiles : has
+    users ||--o{ rentals : places
+    users ||--o{ rentals : approves
+    users ||--o{ rental_items : confirms_fine
+    users ||--o{ payments : confirms
+    users ||--o{ payments : refunds
+    rentals ||--|{ rental_items : contains
+    rentals ||--o| payments : has
+    units ||--o{ rental_items : appears_in
+    units ||--o{ category_unit : classified_by
+    categories ||--o{ category_unit : classifies
+
+    users {
+        bigint id PK
+        string name
+        string email UK
+        string password
+        string role
+        boolean is_active
+        timestamp deleted_at
+    }
+    profiles {
+        bigint id PK
+        bigint user_id FK UK
+        string phone
+        text address
+    }
+    units {
+        bigint id PK
+        string unit_code UK
+        string name
+        text description
+        decimal rental_price
+        string rarity
+        string condition
+        string status
+        string image
+        timestamp deleted_at
+    }
+    categories {
+        bigint id PK
+        string name UK
+        text description
+    }
+    category_unit {
+        bigint unit_id PK_FK
+        bigint category_id PK_FK
+    }
+    rentals {
+        bigint id PK
+        bigint user_id FK
+        string status
+        decimal rental_total
+        timestamp approved_at
+        bigint approved_by FK
+        timestamp expires_at
+        text rejection_reason
+    }
+    rental_items {
+        bigint id PK
+        bigint rental_id FK
+        bigint unit_id FK
+        decimal rental_price_snapshot
+        timestamp borrowed_at
+        timestamp due_at
+        timestamp returned_at
+        string return_condition
+        decimal fine_amount
+        string fine_payment_status
+        timestamp fine_paid_at
+        bigint fine_confirmed_by FK
+    }
+    payments {
+        bigint id PK
+        bigint rental_id FK UK
+        decimal amount
+        string status
+        timestamp paid_at
+        bigint confirmed_by FK
+        timestamp refunded_at
+        bigint refunded_by FK
+        text refund_notes
+    }
+```
+
+Relasi penting:
+
+- `users` memiliki satu `profiles` dan dapat memiliki banyak `rentals`.
+- `rentals` memiliki satu atau lebih `rental_items` dan paling banyak satu `payments`.
+- `units` terhubung ke `categories` melalui pivot `category_unit`.
+- `rental_items` menyimpan snapshot harga, waktu handover/due/return, kondisi, fine, dan audit pembayaran fine.
+- `payments` menyimpan status pembayaran, konfirmasi Admin, dan audit refund.
+- Constraint penting: email, unit code, category name, profile user, payment rental, serta pasangan rental-item bersifat unik sesuai migration.
 
 ## Instalasi dan konfigurasi MySQL
 
@@ -156,7 +379,8 @@ Formal UAT Sprint 3.1:
 - FAIL: 0; BLOCKED: 0; NOT RUN: 0.
 - Database concurrency MySQL terisolasi: PASS.
 - Evidence screenshot tersedia di [docs/uat/evidence](docs/uat/evidence).
-- Status: `UAT READY FOR HUMAN ACCEPTANCE`; sign-off manusia belum diisi.
+- Manual testing telah dilakukan oleh tim proyek.
+- Status: `UAT COMPLETED`; hasil formal dan evidence tersedia pada [PotionVault_UAT_Final.md](docs/PotionVault_UAT_Final.md).
 
 ## Struktur penting
 
@@ -177,17 +401,3 @@ docs/                    PRD, BRD, ERD, flowchart, dan laporan
 ## Schema database
 
 Schema final diringkas pada [ERD Final](docs/PotionVault_ERD_Final.md). Tabel aktual: `users`, `profiles`, `units`, `categories`, `category_unit`, `rentals`, `rental_items`, dan `payments`. Kolom, key, index, soft delete, expiry, return, fine, image, dan refund mengikuti migration Laravel aktual.
-
-## Deliverable tugas yang masih perlu dilengkapi
-
-Source, automated test, dan dokumen formal UAT telah tersedia. Berdasarkan pemeriksaan workspace, item berikut masih perlu dilengkapi atau dikonfirmasi:
-
-- Screenshot skema database aktual.
-- Screen recording/video demo.
-- Manual Book Admin dan Customer.
-- URL repository GitLab yang diwajibkan oleh Bahan Soal.
-- Nama kelompok dan daftar anggota.
-
-Dokumen UAT dan screenshot evidence tersedia pada [Formal UAT Final](docs/PotionVault_UAT_Final.md).
-
-Dokumen tersebut tidak dibuat-buat atau diberi status selesai tanpa bukti.
