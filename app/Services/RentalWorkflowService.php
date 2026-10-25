@@ -17,13 +17,16 @@ class RentalWorkflowService
     public function request(int $userId, array $unitIds): Rental
     {
         return DB::transaction(function () use ($userId, $unitIds) {
-            $user = \App\Models\User::findOrFail($userId);
+            // Serialize quota checks per customer so concurrent requests cannot
+            // both observe the same available quota.
+            $user = \App\Models\User::lockForUpdate()->findOrFail($userId);
             if (!$user->is_active || $user->role !== 'user') throw ValidationException::withMessages(['account' => 'Akun customer tidak aktif.']);
             $unitIds = array_values(array_unique(array_map('intval', $unitIds)));
             if (count($unitIds) < 1 || count($unitIds) > 2) throw ValidationException::withMessages(['unit_ids' => 'Pilih satu atau dua unit.']);
             $active = RentalItem::whereHas('rental', fn ($q) => $q->where('user_id', $userId)->whereIn('status', self::ACTIVE_RENTAL_STATUSES))->whereNull('returned_at')->count();
             if ($active + count($unitIds) > 2) throw ValidationException::withMessages(['unit_ids' => 'Maksimal dua unit aktif diperbolehkan.']);
-            $units = Unit::whereIn('id', $unitIds)->lockForUpdate()->get()->keyBy('id');
+            sort($unitIds);
+            $units = Unit::whereIn('id', $unitIds)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             if ($units->count() !== count($unitIds) || $units->contains(fn (Unit $unit) => $unit->status !== 'AVAILABLE')) throw ValidationException::withMessages(['unit_ids' => 'Salah satu unit sudah tidak tersedia.']);
             $total = $units->sum('rental_price');
             $rental = Rental::create(['user_id' => $userId, 'status' => 'PENDING', 'rental_total' => $total]);
@@ -57,17 +60,70 @@ class RentalWorkflowService
 
     public function expireApproved(): int
     {
-        return Rental::where('status', 'APPROVED')->where('expires_at', '<=', now())->get()->each(function (Rental $rental) { DB::transaction(function () use ($rental) { $rental->update(['status' => 'EXPIRED']); $this->releaseUnits($rental); }); })->count();
+        $expired = 0;
+        Rental::where('status', 'APPROVED')->where('expires_at', '<=', now())->orderBy('id')->eachById(function (Rental $candidate) use (&$expired) {
+            DB::transaction(function () use ($candidate, &$expired) {
+                $rental = Rental::with('items.unit', 'payment')->lockForUpdate()->find($candidate->id);
+                if (!$rental || $rental->status !== 'APPROVED' || !$rental->expires_at?->lte(now())) return;
+                $this->markExpired($rental);
+                $expired++;
+            });
+        });
+        return $expired;
+    }
+
+    public function resolveRefund(Rental $rental, int $adminId, ?string $notes = null): Rental
+    {
+        return DB::transaction(function () use ($rental, $adminId, $notes) {
+            $rental = Rental::with('payment')->lockForUpdate()->findOrFail($rental->id);
+            if ($rental->status !== 'EXPIRED' || $rental->payment?->status !== 'REFUND_PENDING') {
+                throw ValidationException::withMessages(['payment' => 'Rental ini tidak memiliki refund yang menunggu penyelesaian.']);
+            }
+            $rental->payment->update(['status' => 'REFUNDED', 'refunded_at' => now(), 'refunded_by' => $adminId, 'refund_notes' => $notes]);
+            return $rental->fresh('payment');
+        });
     }
 
     public function confirmPayment(Rental $rental, int $adminId): Rental
     {
-        return DB::transaction(function () use ($rental, $adminId) { $rental = Rental::lockForUpdate()->findOrFail($rental->id); $this->assertApprovedAndValid($rental); $payment = $rental->payment()->lockForUpdate()->firstOrFail(); if ((float) $payment->amount !== (float) $rental->rental_total) throw ValidationException::withMessages(['payment' => 'Nominal pembayaran tidak sesuai.']); $payment->update(['status' => 'PAID', 'paid_at' => now(), 'confirmed_by' => $adminId]); return $rental->fresh('payment'); });
+        $expired = false;
+        $result = DB::transaction(function () use ($rental, $adminId, &$expired) {
+            $rental = Rental::with('items.unit', 'payment')->lockForUpdate()->findOrFail($rental->id);
+            $this->assertApprovedAndValid($rental);
+            if ($this->isExpired($rental)) {
+                $this->markExpired($rental);
+                $expired = true;
+                return null;
+            }
+            $payment = $rental->payment()->lockForUpdate()->firstOrFail();
+            if ((float) $payment->amount !== (float) $rental->rental_total) throw ValidationException::withMessages(['payment' => 'Nominal pembayaran tidak sesuai.']);
+            $payment->update(['status' => 'PAID', 'paid_at' => now(), 'confirmed_by' => $adminId]);
+            return $rental->fresh('payment');
+        });
+        if ($expired) throw ValidationException::withMessages(['rental' => 'Batas pengambilan sudah lewat. Rental telah kedaluwarsa.']);
+        return $result;
     }
 
     public function handover(Rental $rental): Rental
     {
-        return DB::transaction(function () use ($rental) { $rental = Rental::with('items.unit', 'payment')->lockForUpdate()->findOrFail($rental->id); $this->assertApprovedAndValid($rental); if ($rental->payment?->status !== 'PAID') throw ValidationException::withMessages(['payment' => 'Pembayaran harus LUNAS sebelum handover.']); if ($rental->items->contains(fn (RentalItem $item) => $item->unit->status !== 'RESERVED')) throw ValidationException::withMessages(['rental' => 'Unit tidak lagi dialokasikan.']); $borrowedAt = now(); foreach ($rental->items as $item) { $item->update(['borrowed_at' => $borrowedAt, 'due_at' => $borrowedAt->copy()->addDays(5)]); $item->unit->update(['status' => 'BORROWED']); } $rental->update(['status' => 'BORROWED']); return $rental->fresh('items.unit', 'payment'); });
+        $expired = false;
+        $result = DB::transaction(function () use ($rental, &$expired) {
+            $rental = Rental::with('items.unit', 'payment')->lockForUpdate()->findOrFail($rental->id);
+            $this->assertApprovedAndValid($rental);
+            if ($this->isExpired($rental)) {
+                $this->markExpired($rental);
+                $expired = true;
+                return null;
+            }
+            if ($rental->payment?->status !== 'PAID') throw ValidationException::withMessages(['payment' => 'Pembayaran harus LUNAS sebelum handover.']);
+            if ($rental->items->contains(fn (RentalItem $item) => $item->unit->status !== 'RESERVED')) throw ValidationException::withMessages(['rental' => 'Unit tidak lagi dialokasikan.']);
+            $borrowedAt = now();
+            foreach ($rental->items as $item) { $item->update(['borrowed_at' => $borrowedAt, 'due_at' => $borrowedAt->copy()->addDays(5)]); $item->unit->update(['status' => 'BORROWED']); }
+            $rental->update(['status' => 'BORROWED']);
+            return $rental->fresh('items.unit', 'payment');
+        });
+        if ($expired) throw ValidationException::withMessages(['rental' => 'Batas pengambilan sudah lewat. Rental telah kedaluwarsa.']);
+        return $result;
     }
 
     public function returnItem(RentalItem $item, string $condition): RentalItem
@@ -80,6 +136,8 @@ class RentalWorkflowService
         return DB::transaction(function () use ($item, $adminId) { $item = RentalItem::lockForUpdate()->findOrFail($item->id); if ((float) $item->fine_amount <= 0 || $item->fine_payment_status !== 'UNPAID') throw ValidationException::withMessages(['fine' => 'Denda tidak dapat dilunasi pada status ini.']); $item->update(['fine_payment_status' => 'PAID', 'fine_paid_at' => now(), 'fine_confirmed_by' => $adminId]); return $item->fresh(); });
     }
 
-    private function assertApprovedAndValid(Rental $rental): void { if ($rental->status !== 'APPROVED') throw ValidationException::withMessages(['rental' => 'Rental harus APPROVED.']); if ($rental->expires_at && $rental->expires_at->lte(now())) { $rental->update(['status' => 'EXPIRED']); $this->releaseUnits($rental); throw ValidationException::withMessages(['rental' => 'Batas pengambilan sudah lewat.']); } }
+    private function assertApprovedAndValid(Rental $rental): void { if ($rental->status !== 'APPROVED') throw ValidationException::withMessages(['rental' => 'Rental harus APPROVED.']); }
+    private function isExpired(Rental $rental): bool { return $rental->expires_at !== null && $rental->expires_at->lte(now()); }
+    private function markExpired(Rental $rental): void { $rental->update(['status' => 'EXPIRED']); if ($rental->payment?->status === 'PAID') $rental->payment->update(['status' => 'REFUND_PENDING']); $this->releaseUnits($rental); }
     private function releaseUnits(Rental $rental): void { $rental->loadMissing('items.unit'); foreach ($rental->items as $item) { if ($item->unit && $item->unit->status === 'RESERVED') $item->unit->update(['status' => 'AVAILABLE']); } }
 }

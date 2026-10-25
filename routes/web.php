@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\ResourceController;
 use App\Http\Controllers\Admin\RentalWorkflowController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\ProfilePasswordController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -31,6 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/billing', [BillingController::class, 'index'])->name('billing');
     Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('profile');
     Route::put('/profile', [CustomerProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfilePasswordController::class, 'update'])->name('profile.password.update');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
@@ -45,13 +47,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/requests/{rental}/approve', [RentalWorkflowController::class, 'approve'])->name('requests.approve');
     Route::post('/requests/{rental}/reject', [RentalWorkflowController::class, 'reject'])->name('requests.reject');
     Route::post('/payments/{rental}/confirm', [RentalWorkflowController::class, 'payment'])->name('payments.confirm');
+    Route::post('/payments/{rental}/refund', [RentalWorkflowController::class, 'refund'])->name('payments.refund');
     Route::post('/handover/{rental}', [RentalWorkflowController::class, 'handover'])->name('handover.confirm');
     Route::post('/returns/{item}', [RentalWorkflowController::class, 'returnItem'])->name('returns.confirm');
     Route::post('/fines/{item}/pay', [RentalWorkflowController::class, 'payFine'])->name('fines.pay');
     Route::get('/reports', [RentalWorkflowController::class, 'report'])->name('reports');
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories'); Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store'); Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update'); Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
-    Route::get('/customers', [CustomerController::class, 'index'])->name('customers'); Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store'); Route::put('/customers/{user}', [CustomerController::class, 'update'])->name('customers.update'); Route::post('/customers/{user}/toggle', [CustomerController::class, 'toggle'])->name('customers.toggle');
+    Route::get('/customers', [CustomerController::class, 'index'])->name('customers'); Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store'); Route::put('/customers/{user}', [CustomerController::class, 'update'])->name('customers.update'); Route::post('/customers/{user}/toggle', [CustomerController::class, 'toggle'])->name('customers.toggle'); Route::delete('/customers/{user}', [CustomerController::class, 'destroy'])->name('customers.destroy'); Route::post('/customers/{user}/restore', [CustomerController::class, 'restore'])->name('customers.restore');
     foreach (['payments', 'handover', 'returns', 'fines'] as $resource) Route::get('/'.$resource, [ResourceController::class, 'show'])->defaults('resource', $resource)->name($resource);
     Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile');
     Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfilePasswordController::class, 'update'])->name('profile.password.update');
 });

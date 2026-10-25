@@ -1,1 +1,23 @@
-<header class="topbar"><a class="brand" href="{{ route('home') }}"><span class="brand-mark">⚗</span>PotionVault</a><nav class="nav"><a class="{{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">⌂ Beranda</a><a class="{{ request()->routeIs('catalog*') ? 'active' : '' }}" href="{{ route('catalog') }}">▣ Katalog</a>@auth<a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">⌂ Dasbor</a><a href="{{ route('rentals.index') }}">◫ Rental Saya</a><a href="{{ route('billing') }}">▤ Tagihan</a><a href="{{ route('profile') }}">♙ Profil</a>@else<a href="{{ route('login') }}">♙ Masuk</a>@endauth</nav><div class="user-chip"><div class="avatar">♟</div><span>@auth Selamat datang,<br><b>{{ auth()->user()->name }}</b>@else Pengunjung @endauth</span>@auth<form method="post" action="{{ route('logout') }}" style="display:inline">@csrf<button class="btn subtle small" type="submit">Keluar</button></form>@endauth</div></header>
+<header class="topbar">
+    <a class="brand" href="{{ route('home') }}"><span class="brand-mark">⚗</span>PotionVault</a>
+    <button class="menu-toggle" type="button" aria-label="Buka navigasi" aria-expanded="false">☰</button>
+    <nav class="nav">
+        <a class="{{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">⌂ Beranda</a>
+        <a class="{{ request()->routeIs('catalog*') ? 'active' : '' }}" href="{{ route('catalog') }}">▣ Katalog</a>
+        @auth
+            <a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">⌂ Dasbor</a>
+            <a href="{{ route('rentals.index') }}">◫ Rental Saya</a>
+            <a href="{{ route('billing') }}">¤ Tagihan</a>
+            <a href="{{ route('profile') }}">♙ Profil</a>
+        @else
+            <a href="{{ route('login') }}">♙ Masuk</a>
+        @endauth
+    </nav>
+    <div class="user-chip">
+        <div class="avatar">♟</div>
+        <span>@auth Selamat datang,<br><b>{{ auth()->user()->name }}</b>@else Pengunjung @endauth</span>
+        @auth
+            <form method="post" action="{{ route('logout') }}" style="display:inline">@csrf<button class="btn subtle small" type="submit">Keluar</button></form>
+        @endauth
+    </div>
+</header>
