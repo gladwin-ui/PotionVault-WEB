@@ -79,7 +79,7 @@ flowchart TD
     N -- Tidak --> O[fine NO_FINE]
     N -- Ya --> P[Hitung fine Rp2.000 per periode 24 jam per unit]
     P --> Q[fine UNPAID]
-    Q --> R{Admin menjalankan payFine()?}
+    Q --> R{Admin menjalankan payFine}
     R -- Ya --> S[fine PAID + aktor/waktu]
     R -- Tidak --> T[fine tetap UNPAID]
 ```

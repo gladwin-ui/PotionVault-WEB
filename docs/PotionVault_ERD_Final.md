@@ -32,7 +32,7 @@ erDiagram
     }
     profiles {
         bigint id PK
-        bigint user_id FK UK
+        bigint user_id FK
         string phone
         text address
         timestamp created_at
@@ -61,8 +61,8 @@ erDiagram
         timestamp updated_at
     }
     category_unit {
-        bigint unit_id PK_FK
-        bigint category_id PK_FK
+        bigint unit_id PK
+        bigint category_id PK
     }
     rentals {
         bigint id PK
@@ -95,7 +95,7 @@ erDiagram
     }
     payments {
         bigint id PK
-        bigint rental_id FK UK
+        bigint rental_id UK
         decimal amount
         string status
         timestamp paid_at

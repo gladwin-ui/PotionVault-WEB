@@ -24,7 +24,7 @@ PotionVault adalah aplikasi Laravel untuk mengelola penyewaan unit fisik artefak
 | Anggota | **Darvesh Gladwin Musyaffa** |
 | Platform | Web |
 | Status | Automated UAT dan manual testing selesai |
-| Repository | URL repository tidak tersedia di workspace ini; jangan menganggap URL GitHub/GitLab tanpa verifikasi |
+| Repository | [github.com/gladwin-ui/PotionVault-WEB](https://github.com/gladwin-ui/PotionVault-WEB) |
 | Demo video | Belum tersedia |
 
 ## Dokumentasi navigasi
@@ -198,7 +198,7 @@ flowchart TD
     N -- Tidak --> O[fine NO_FINE]
     N -- Ya --> P[Hitung fine Rp2.000 per periode 24 jam per unit]
     P --> Q[fine UNPAID]
-    Q --> R{Admin menjalankan payFine()?}
+    Q --> R{Admin menjalankan payFine}
     R -- Ya --> S[fine PAID + aktor/waktu]
     R -- Tidak --> T[fine tetap UNPAID]
 ```
@@ -232,7 +232,7 @@ erDiagram
     }
     profiles {
         bigint id PK
-        bigint user_id FK UK
+        bigint user_id FK
         string phone
         text address
     }
@@ -254,8 +254,8 @@ erDiagram
         text description
     }
     category_unit {
-        bigint unit_id PK_FK
-        bigint category_id PK_FK
+        bigint unit_id PK
+        bigint category_id PK
     }
     rentals {
         bigint id PK
@@ -283,7 +283,7 @@ erDiagram
     }
     payments {
         bigint id PK
-        bigint rental_id FK UK
+        bigint rental_id UK
         decimal amount
         string status
         timestamp paid_at
