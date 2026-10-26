@@ -25,7 +25,8 @@ PotionVault adalah aplikasi Laravel untuk mengelola penyewaan unit fisik artefak
 | Platform | Web |
 | Status | Automated UAT dan manual testing selesai; human acceptance/sign-off formal masih pending |
 | Repository | [github.com/gladwin-ui/PotionVault-WEB](https://github.com/gladwin-ui/PotionVault-WEB) |
-| Demo video | Belum tersedia |
+| Manual book admin | [Google Drive](https://drive.google.com/file/d/1XiAaMDjWUGs87ZpL4MarMbyr9gIkoe6d/view?usp=sharing) |
+| Manual book customer | [Google Drive](https://drive.google.com/file/d/1Dq4Wp33Eho_wkbADNlX8VuZHah9Vw2Yd/view?usp=sharing) |
 
 ## Dokumentasi navigasi
 
